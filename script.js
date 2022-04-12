@@ -1,183 +1,230 @@
-// Находим все нужные элементы и контролы:
-const fromPanel = document.querySelector('.from');
-const toPanel = document.querySelector('.to');
+// План действий:
+// 1) Внизу списка находится кнопка «Добавить». При нажатии на неё в конец списка добавляется новая пустая запись.
+// 2) Над списком присутствует кнопка сортировки. При нажатии на неё записи сортируются по алфавиту. 
+// 3) Повторное нажатие приводит к сортировке по алфавиту в обратном порядке. 
+// 4) После каждого нажатия кнопка меняет свое состояние, показывая пользователю, 
+// в каком порядке будет происходить сортировка (прямом или обратном).
+// 5) В начальном состоянии список содержит одну пустую запись.
+// 6) drag and drop.
 
-const fromInput = fromPanel.querySelector('.calc-input-field');
-const toInput = toPanel.querySelector('.calc-input-field');
+let array = [''];
 
-const fromButtonList = fromPanel.querySelector('.calc-currency');
-const toButtonList = toPanel.querySelector('.calc-currency');
+const tasker = document.querySelector('.tasker');
+const firstTask = document.querySelector('.first-task');
+const otherTasks = document.querySelector('.other-tasks');
+let task = document.querySelector('.task-input');
+const addTaskButton = document.querySelector('.button-add');
+const sort = document.querySelector('.sort');
 
-const fromRate = fromPanel.querySelector('.calc-input-rate');
-const toRate = toPanel.querySelector('.calc-input-rate');
+renderList();
 
-const fromSelector = fromPanel.querySelector('select.calc-currency-item');
-const toSelector = toPanel.querySelector('select.calc-currency-item');
+addTaskButton.addEventListener('click', addHandler);
 
-const state = { from: 'RUB', to: 'USD', amount: 1 }
-
-initialApp();
-
-// Получаем данные с сервера с параметрами запроса сразу с суммой к конвертации:
-
-async function convert(from, to, amount) {
-    const response = await fetch(`https://api.exchangerate.host/convert?from=${from}&to=${to}&amount=${amount}&places=4`);
-    const data = await response.json();
-    return [data.result, data.info.rate];
-}
-
-function activateButton(button) {
-    button.classList.add('active');
-}
-
-function disableButton(button) {
-    button.classList.remove('active');
-}
-
-function getActiveButton(buttonList) {
-    return buttonList.querySelector('.active');
-}
-
-function getButtonByCurrency(currency, buttonList) {
-    return buttonList.querySelector(`.calc-currency-item[value=${currency}]`);
-}
-
-function initialApp() {
-    activateButton(getButtonByCurrency(state.from, fromButtonList));
-    activateButton(getButtonByCurrency(state.to, toButtonList));
-}
-
-// const [result, rate] = convert();
-
-// Обработчики событий на инпуты, кнопки выбора валюты и селекты:
-
-fromInput.addEventListener('input', async (event) => {
-    let rate;
-    let currencyFrom = fromButtonList.querySelector('.active').value;
-    let currencyTo = toButtonList.querySelector('.active').value;
-    [toInput.value, rate] = await convert(currencyFrom, currencyTo, event.target.value);
-
-    fromRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo.toFixed(0)}`:  `1 ${currencyFrom} = ${rate} ${currencyTo}`; 
-    toRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo.toFixed(0)}` : `1 ${currencyTo} = ${(1/ rate).toFixed(4)} ${currencyFrom}`;
-
-    // console.log(`toInput value:  ${toInput.value}, rate: ${rate}, event.target.value: ${event.target.value}, currencyFrom: ${currencyFrom}, currencyTo: ${currencyTo}`);
-})
+sort.addEventListener('click', sortButtonChange);
 
 
-toInput.addEventListener('input', async (event) => {
-    // let rate;
-    let currencyFrom = fromButtonList.querySelector('.active').value;
-    let currencyTo = toButtonList.querySelector('.active').value;
-    [fromInput.value, rate] = await convert(currencyTo, currencyFrom, event.target.value);
-
-    fromRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo.toFixed(0)}`:  `1 ${currencyFrom} = ${rate} ${currencyTo}`; 
-    toRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo.toFixed(0)}` : `1 ${currencyTo} = ${(1/ rate).toFixed(4)} ${currencyFrom}`;
-
-    // console.log("fromInput value: ", fromInput.value, "rate: ---- test", "event.target.value: ", event.target.value, "currencyFrom: ", currencyFrom, "currencyTo: ", currencyTo)
-})
-
-// События, которые выделяют кнопки "активными" при нажатии:
-
-fromButtonList.addEventListener('click', (event) => {
-    if (event.target.classList.contains('calc-currency-item')) {
-        disableButton(getActiveButton(fromButtonList));
-        activateButton(event.target);
-    }
-
-})
-
-toButtonList.addEventListener('click', (event) => {
-    if (event.target.classList.contains('calc-currency-item')) {
-        disableButton(getActiveButton(toButtonList));
-        activateButton(event.target);
-    }
-})
-
-// Проверяем, является ли выделенный контрол кнопкой или селектом - и в зависимости от этого считаем:
-
-fromButtonList.addEventListener("click", async (event) => {
-    if (event.target.tagName === "BUTTON") {
-        let rate;
-        let currencyFrom = event.target.value;
-        let currencyTo = toButtonList.querySelector('.active').value;
-        [toInput.value, rate] = await convert(currencyFrom, currencyTo, fromInput.value);
-
-        fromRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo}`:  `1 ${currencyFrom} = ${rate} ${currencyTo}`; 
-        toRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo}` : `1 ${currencyTo} = ${(1/ rate).toFixed(4)} ${currencyFrom}`;
-
-        // console.log(`fromButtonList:  toInput value:  ${toInput.value}, rate: ${rate}, event.target.value: ${event.target.value}, currencyFrom: ${currencyFrom}, currencyTo: ${currencyTo}`);
-    }
-    
-});
-
-fromSelector.addEventListener("change", async (event) => {
-    if (event.target.tagName === "SELECT") {
-        let rate;
-        let currencyFrom = event.target.value;
-        let currencyTo = toButtonList.querySelector('.active').value;
-
-        [toInput.value, rate] = await convert(currencyFrom, currencyTo, fromInput.value);
-        fromRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo}`:  `1 ${currencyFrom} = ${rate} ${currencyTo}`; 
-        toRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo}` : `1 ${currencyTo} = ${(1/ rate).toFixed(4)} ${currencyFrom}`;
-
-        // console.log(`fromSelect:   toInput value:  ${toInput.value}, rate: ${rate}, event.target.value: ${event.target.value}, currencyFrom: ${currencyFrom}, currencyTo: ${currencyTo}`);
-    }
-    
-})
-
-
-
-toButtonList.addEventListener("click", async (event) => {
-
-    if (event.target.tagName === "BUTTON") {
-        let currencyFrom = event.target.value;
-        let currencyTo = fromButtonList.querySelector('.active').value;
-        [toInput.value, rate] = await convert(currencyTo, currencyFrom, fromInput.value);
-
-        fromRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo}`:  `1 ${currencyFrom} = ${rate} ${currencyTo}`; 
-        toRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo}` : `1 ${currencyTo} = ${(1/ rate).toFixed(4)} ${currencyFrom}`;
-
-        // console.log(`toButtonList: "fromRate.innerText "${fromRate.innerText} toInput value:  ${toInput.value}, rate: , event.target.value: ${event.target.value}, currencyFrom: ${currencyFrom}, currencyTo: ${currencyTo}`);
-    }
-});
-
-
-toSelector.addEventListener("change", async (event) => {
-    if (event.target.tagName === "SELECT") {
-        let currencyFrom = event.target.value;
-        let currencyTo = fromButtonList.querySelector('.active').value;
-
-        [toInput.value, rate] = await convert(currencyTo, currencyFrom, fromInput.value);
-
-        fromRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo}`:  `1 ${currencyFrom} = ${rate} ${currencyTo}`; 
-        toRate.innerText = (currencyFrom === currencyTo) ? `1 ${currencyFrom} = 1 ${currencyTo}` : `1 ${currencyTo} = ${(1/ rate).toFixed(4)} ${currencyFrom}`;
-
-        // console.log(`toSelect:   toInput value:  ${toInput.value}, event.target.value: ${event.target.value}, currencyFrom: ${currencyFrom}, currencyTo: ${currencyTo}`);
-    }
-});
-
-
-
-// Запрос на получение всех вариантов валют с сервера:
-async function getCurrency() {
-    const resp = await fetch("https://api.exchangerate.host/latest")
-    const data = await resp.json()
-    return data;
-}
-
-//Получаем данные с сервера
-getCurrency()
-    .then((data) => {
-        const currencyArr = Object.keys(data.rates);
-        renderSelect(currencyArr, fromSelector);
-        renderSelect(currencyArr, toSelector);
-    })
-
-// Отрисовываем селекторы по данным с сервера: *https://learn.javascript.ru/form-elements#new-option
-
-function renderSelect(arr, whereToAppend) {
-    arr.forEach(element => {
-        let option = new Option(`${element}`, `${element}`);
-        whereToAppend.append(option);
+function renderList() {
+    otherTasks.innerHTML = '';
+    array.forEach((item, index) => {
+        otherTasks.append(createTaskElement(item, index));
     });
 }
+
+
+function sortButtonChange(event) {
+    event.target.classList.toggle('sort-up'); //здесь при нажатии на кнопку сортировки присваиваем ей каждый раз новый класс (.toggle)- если есть, то меняет на другой.
+
+    if (event.target.classList.contains('sort-up')) {
+        sortHandlerAscending();
+    } else {
+        sortHandlerDescending();
+    }
+};
+
+
+function sortHandlerAscending() {
+    array.sort((a, b) => {
+        if (a < b) {
+            return -1;
+        }
+        if (a > b) {
+            return 1;
+        }
+        if (a === b) {
+            return 0;
+        }
+    })
+    renderList();
+}
+
+function sortHandlerDescending() {
+    array.sort((a, b) => {
+        if (a > b) {
+            return -1;
+        }
+        if (a < b) {
+            return 1;
+        }
+        if (a === b) {
+            return 0;
+        }
+    })
+    renderList();
+}
+
+
+function addHandler() {
+    array.push('');
+    renderList();
+}
+
+
+function createTaskElement(arrayEl, index) {
+    let block = document.createElement('div');
+    block.classList.add('task-block');
+    let input = document.createElement('input');
+    input.classList.add('task-input');
+
+    let xButton = document.createElement('button');
+    xButton.classList.add('x-button');
+    xButton.addEventListener('click', xButtonHandler);
+
+    input.value = arrayEl;
+    input.id = index;
+
+    input.addEventListener('input', ((event) => {
+        let index = event.target.id;
+        let value = event.target.value;
+        array[index] = value;
+    }));
+
+
+    function xButtonHandler(event) {
+        let taskToDelete = event.target.previousElementSibling;
+        let parent = event.target.parentElement;
+
+        array = array.filter(item => item != taskToDelete.value)
+
+        if (array.length >= 1) {
+            parent.remove();
+        } else if (array.length = 0) {
+            // console.log(array);
+            // taskToDelete.value = null;
+        }
+    };
+    
+    block.append(input, xButton);
+    return block
+}
+
+
+
+
+
+// function xButtonHandler() {
+//     array = array.filter((item, index) => item != array[index]);
+//     block.remove()
+// };
+
+// let sortButtonCreate = (() => {
+//     sortingNew = document.createElement('div');
+//     sortingNew.classList.add('sorting');
+//     mainBlock.append(sortingNew);
+
+//     sortUpNew = document.createElement('button');
+//     sortUpNew.classList.add('sort-up');
+//     sorting.append(sortUpNew);
+// });
+
+// console.log(sortButtonCreate);
+// console.dir(sortButtonCreate);
+
+
+// function sortUpHandler () {
+//     otherTasks.innerHTML = '';
+
+//     data = array.sort((a,b) => b - a);
+
+//     data.forEach((item) => {
+//         otherTasks.append(createTaskElement(item));
+//     });
+// }
+
+
+// здесь мы запускаем forEach для каждого элемента массива array - и для каждого мы делаем:
+// tasker.append - подвязываем вниз элемента tasker (окошко с задачами) новый элемент.
+// (createTaskElement(item)) // это то, ЧТО мы подвязываем.
+// event.target.innerText = 'Нажала кнопку и меняю на ней текст';
+// event.target.style.backgroundColor = "aquamarine";
+// event.target.style.color = "black";
+
+
+// Пробовала как работает:
+// task.addEventListener('change', (event) => {
+//     console.log(event.target);
+//     console.log(event.target.value);
+// });
+
+
+// function clickHandler() {
+//     array.push(task.value);
+//     console.log(array);
+// }
+
+// Эта функция делает "отрисовку" таскера на странице при каждом запуске события - клика по кнопке "Добавить".
+
+
+
+// console.dir(addTaskButton);
+// Добавили обработчик события "клик" на кнопку "Добавить" (addTaskButton).
+// addTaskButton.addEventListener('click', clickHandler);
+
+
+
+// Что делает эта функция? эта функция и есть сам обработчик события, т.е. что происходит при клике на кнопку 
+// (что браузер делает при возникновении события).
+
+
+
+// data.forEach((item) => {
+    //     otherTasks.append(createTaskElement(item));
+    // });
+
+
+    // function xButtonHandler() {
+    //     console.log(array);
+    //     if (array.length > 1) {
+    //         array = array.filter(item => item != arrayEl);
+    //         block.remove();
+    //     } else if (array.length ===1) {
+    //         input.value = "";
+    //     }
+    // };
+
+
+
+
+    // if (array.length > 1) {
+    //     array = array.filter(item => item != arrayEl)
+    //     block.remove();
+    // } else if (array.length === 1) {
+    //     input.value = "";
+    // }
+
+
+    // array = array.filter((item,index) => {item[index] != input.value[input.id]});
+
+
+    // array = array.filter((item,index) => {
+    //     return item[index] != taskToDelete.value[taskToDelete.id];
+
+
+
+     // array = array.filter((item,index) => {
+        //     return item[index] != taskToDelete.value[taskToDelete.id];
+        //     // console.log(item, index)
+        //     // return item[index];
+        // });
+        // parent.remove();
+        // console.log(array);
+        // block.remove();
