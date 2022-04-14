@@ -1,5 +1,3 @@
-
-
 let array = [''];
 
 const tasker = document.querySelector('.tasker');
@@ -24,7 +22,7 @@ function renderList() {
 
 
 function sortButtonChange(event) {
-    event.target.classList.toggle('sort-up'); //здесь при нажатии на кнопку сортировки присваиваем ей каждый раз новый класс (.toggle)- если есть, то меняет на другой.
+    event.target.classList.toggle('sort-up');
 
     if (event.target.classList.contains('sort-up')) {
         sortHandlerAscending();
@@ -66,8 +64,13 @@ function sortHandlerDescending() {
 
 
 function addHandler() {
-    array.push('');
-    renderList();
+    if(!array.some(t => !t)) {
+        array.push('');
+        renderList();
+    }
+    else {
+        alert('Mr. or Mrs. please enter a name.....');
+    }
 }
 
 
@@ -100,8 +103,7 @@ function createTaskElement(arrayEl, index) {
         if (array.length >= 1) {
             parent.remove();
         } else if (array.length = 0) {
-            // console.log(array);
-            // taskToDelete.value = null;
+        
         }
     };
     
