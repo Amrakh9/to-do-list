@@ -86,7 +86,7 @@ function createTaskElement(arrayEl, index) {
     input.value = arrayEl;
     input.id = index;
 
-    input.addEventListener('input', ((event) => {
+    input.addEventListener('change', ((event) => {
         let index = event.target.id;
         let value = event.target.value;
         array[index] = value;
@@ -97,12 +97,11 @@ function createTaskElement(arrayEl, index) {
         let taskToDelete = event.target.previousElementSibling;
         let parent = event.target.parentElement;
 
-        array = array.filter(item => item != taskToDelete.value)
-
+        array.splice(taskToDelete.id, 1);
         if (array.length >= 1) {
             parent.remove();
-        } else if (array.length = 0) {
-        
+        } else if (array.length == 0) {
+            taskToDelete.value = '';
         }
     };
     
