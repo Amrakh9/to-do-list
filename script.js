@@ -1,13 +1,10 @@
 let array = [''];
 
-const tasker = document.querySelector('.tasker');
-const firstTask = document.querySelector('.first-task');
+
 const otherTasks = document.querySelector('.other-tasks');
 let task = document.querySelector('.task-input');
 const addTaskButton = document.querySelector('.button-add');
 const sort = document.querySelector('.sort');
-
-renderList();
 
 addTaskButton.addEventListener('click', addHandler);
 
@@ -19,6 +16,8 @@ function renderList() {
         otherTasks.append(createTaskElement(item, index));
     });
 }
+
+renderList();
 
 
 function sortButtonChange(event) {
